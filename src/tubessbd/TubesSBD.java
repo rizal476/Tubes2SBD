@@ -6,9 +6,11 @@
 package tubessbd;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import static java.nio.file.Files.lines;
 import java.util.ArrayList;
@@ -154,6 +156,203 @@ public class TubesSBD {
         System.out.println("Tanpa indeks, jumlah blok yang diakses : "+nindex);
     }
     
+    public static String[] olahQuery(String query){
+        String q1 = query.replace(";"," ;");             //penambahan spasi di;
+        String q2 = q1.replace(",", " ");             //mengganti koma(,) dengan spasi ( )
+        String q3 = q2.replace("("," ");            //mengganti buka kurung dengan spasi
+        String q4 = q3.replace(")"," ");           //mengganti tutup kurung dengan spasi
+//        String q5 = q4.replace("="," ");           //mengganti sama dengan dengan spasi
+        String q5 = q4.replace("  "," ");
+        String q6 = q5.replace("   "," ");
+        
+        
+        String[] array = q6.split(" ");
+        return array;
+    }
+    
+    public static boolean cekPenulisan(String[] array){
+        if(array[0].equalsIgnoreCase("select") && array[array.length-1].equalsIgnoreCase(";")){
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    
+    public static String cariTabel(String[] array){
+        int i = 0;
+        String tabel = null;
+        while((i < array.length) && (!array[i].equalsIgnoreCase("from"))){
+            i++;
+        }
+        if (array[i].equalsIgnoreCase("from")){
+            int j = i;
+            i = 0;
+            while((i < array.length) && (!array[i].equalsIgnoreCase(array[j+1]))){
+                i++;
+            }
+            if (array[i].equalsIgnoreCase(array[j+1])){
+                tabel = array[i];
+            }
+            else {
+                tabel = "Eror";
+            }
+        }
+        return tabel;
+    }
+    
+    public static String[] ubahHasilTxt(String[] hasiltxt){
+        String[] data = hasiltxt[0].split(";");
+        ArrayList<String> myList = new ArrayList<String>(Arrays.asList(data));
+        
+        String[] temp = hasiltxt[1].split(";");
+        for (int i = 0; i < temp.length; i++){
+            myList.add(temp[i]);
+        }
+        temp = hasiltxt[2].split(";");
+        for (int i = 0; i < temp.length; i++){
+            myList.add(temp[i]);
+        }
+        temp = hasiltxt[3].split(";");
+        for (int i = 0; i < temp.length; i++){
+            myList.add(temp[i]);
+        }
+        data = myList.toArray(data);
+        System.out.println(Arrays.toString(data));
+        return data;
+    }
+    
+    public static int ambilN(String[] hasiltxt, String tabel){
+        int i = 0;
+        int N = 0;
+        while ((i < hasiltxt.length) && (!hasiltxt[i].contains(tabel))){
+            i++;
+        }
+        if (hasiltxt[i].contains(tabel)){
+            String[] data = hasiltxt[i].split(";");
+            boolean status = false;
+            i = 0;
+            while (i < data.length && !status){
+                if (data[i].contains("n ")){
+                    status = true;
+                }
+                else {
+                    i++;
+                }
+            }
+            String[] nilaiN = data[i].split(" ");
+            N = Integer.parseInt(nilaiN[1]);
+        }
+        return N;
+    }
+    
+    public static String kolom(String[] array, String[] array2){
+        int indexFrom = indexFrom(array);
+        String kolom = "";
+        int i = 1;
+        while((i < indexFrom)){
+            kolom = kolom + array[i] + ", ";
+            i++;
+        }
+//        String[] temp = null;
+        
+//        temp = myList.toArray(temp);
+//        for (int z = 0; z < temp.length; z++){
+//            System.out.println(temp[z]);
+//        }
+//        for (int j = 0; j < temp.length; j++){
+//            kolom = kolom + temp[j] + ", ";
+//        }
+        kolom = kolom.substring(0,kolom.length()-1);
+        kolom = kolom.substring(0,kolom.length()-1);
+        String kkolom = kolom.replace(", ", ";");
+        i = 0;
+
+        while((i < array2.length) && (!array2[i].contains(kkolom))){
+            i++;
+        }
+        
+        if (i <= 3){
+            if(array2[i].contains(kkolom)){
+                kolom = kolom;
+            }
+        }
+        else {
+            kolom = "eror";
+        }
+        return kolom;
+    }
+    
+    public static int indexTabel(String tabel, String[] array){
+        int i = 0;
+        while ((i < array.length) && (!array[i].equalsIgnoreCase(tabel))){
+            i++;
+        }
+        if (array[i].equalsIgnoreCase(tabel)){
+            return i;
+        }
+        else {
+            return 999;
+        }
+    }
+    
+    public static int indexFrom(String[] array){
+        int i = 0;
+        while((i < array.length) && (!array[i].equalsIgnoreCase("from"))){
+            i++;
+        }
+        if (array[i].equalsIgnoreCase("from")){
+            return i;
+        }
+        else {
+            return 999;
+        }
+    }
+    
+    public static boolean cekPK(String kolom, int index){
+        if (kolom.contains("id_supplier") || kolom.contains("id_supermarket")){
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+    
+    public static String ambilWhere(String[] array){
+        int i = 0;
+        String where = "";
+        while ((i < array.length) && (!array[i].equalsIgnoreCase("where"))){
+            i++;
+        }
+        i++;
+        while (i < array.length){
+            where = where + array[i] + " ";
+            i++;
+        }
+        return where;
+    }
+    
+    public static int hitungCost(String type, int n, String tabel, String[] array){
+        int temp = 0;
+        if (type == "A1"){
+            temp = n/2;
+        }  
+        else if (type == "A2"){
+            int i = 0;
+            while ((i < array.length) && (!array[i].contains(tabel))){
+                i++;
+            }
+            if (array[i].contains(tabel)){
+                int FAN = cariFAN(i,array);
+                temp = (int) (Math.ceil(Math.log(n)/Math.log(FAN))+1);
+            }
+        }
+        else if (type == "A1n"){
+            temp = n;
+        }
+        return temp;
+    }
+    
     public static void menu1(String[] hasiltxt){
         System.out.println("Menu 1 : BFR dan Fanout Ratio");
         
@@ -212,26 +411,111 @@ public class TubesSBD {
         System.out.println("Input : ");
         System.out.print(">> Cari Rekord ke - : ");
         rekord = input.next();
-        if (Integer.parseInt(rekord) <= 100000){
-            System.out.print(">> Nama Tabel : ");
-            tabel = input.next();
-            cariRekord(hasiltxt,rekord,tabel);
-        }
-        else {
-            System.out.println("Maaf banyak rekord hanya 100000");
-        }
-        
+        System.out.print(">> Nama Tabel : ");
+        tabel = input.next();
+        cariRekord(hasiltxt,rekord,tabel);
     }
     
-    public static void menu4(){
+    public static void menu4(String[] hasiltxt){
         String query;
+        String[] hasiltxt2 = null;
+        int indexTabel = 0;
         
         Scanner input = new Scanner(System.in);
         
         System.out.println("Menu 4 : QEP dan Cost");
         System.out.println("    Input Query : ");
         System.out.print(">> ");
-        query = input.next();
+        query = input.nextLine();
+        
+        String[] array = olahQuery(query);
+        boolean cek = cekPenulisan(array);
+        if (cek) {
+            String tabel = cariTabel(array);
+            indexTabel = indexTabel(tabel, array);
+            int N = ambilN(hasiltxt, tabel);
+            if (array[indexTabel+1].equalsIgnoreCase("where")){
+                String kolom = kolom(array,hasiltxt);
+                boolean cekPK = cekPK(kolom,indexTabel);
+                if (cekPK){
+                    System.out.println("Tabel (1) : "+tabel);
+                    System.out.println("List Kolom : "+kolom);
+                    System.out.println("");
+                    System.out.println("QEP #1");
+                    System.out.println("PROJECTION "+kolom+" -- on the fly");
+                    System.out.println("SELECTION "+ambilWhere(array)+" -- A1 key");
+                    System.out.println(tabel);
+                    int cost1 = hitungCost("A1",N,tabel,hasiltxt);
+                    System.out.println("Cost : "+cost1);
+                    System.out.println("");
+                    System.out.println("QEP #2");
+                    System.out.println("PROJECTION "+kolom+" -- on the fly");
+                    System.out.println("SELECTION "+ambilWhere(array)+" -- A2");
+                    System.out.println(tabel);
+                    int cost2 = hitungCost("A2",N,tabel,hasiltxt);
+                    System.out.println("Cost : "+cost2);
+                    if (cost1 > cost2){
+                        System.out.println("QEP optimal : QEP#2");
+                        try{
+                            BufferedWriter br = new BufferedWriter(new FileWriter("F:\\SBD\\TubesSBD\\src\\tubessbd//sharedpool.txt",true));
+                            br.write("QEP #2");    
+                            br.newLine();
+                            br.write("Projection "+kolom+" -- on the fly");    
+                            br.newLine();
+                            br.write("SELECTION "+ambilWhere(array)+" -- A2");   
+                            br.newLine();
+                            br.write(tabel);   
+                            br.newLine();
+                            br.write("Cost (worse case): "+cost2);    
+                            br.newLine();
+                            br.write("");    
+                            br.newLine();
+                            br.close();
+                        }
+                        catch(Exception e){
+                            System.out.println("LOAD FILE ERROR ATAU GAK NEMU ("+e+") "); //ketika gagal load data
+                        }                     
+                    }
+                    else{
+                        System.out.println("QEP optimal : QEP#1");
+                        try{
+                            BufferedWriter br = new BufferedWriter(new FileWriter("F:\\SBD\\TubesSBD\\src\\tubessbd//sharedpool.txt",true)); 
+                            br.write("QEP #1");   br.newLine();
+                            br.write("Projection "+kolom+" -- on the fly");    br.newLine();
+                            br.write("SELECTION "+ambilWhere(array)+" -- A1 key");    br.newLine();
+                            br.write(tabel);   br.newLine();
+                            br.write("Cost (worse case): "+cost1);   br.newLine();
+                            br.write("");   br.newLine();
+                            br.close();
+                        }
+                        catch(Exception e){
+                            System.out.println("LOAD FILE ERROR ATAU GAK NEMU ("+e+") "); //ketika gagal load data
+                        }       
+                    }
+                }
+                else {
+                    System.out.println("Tabel (1) : "+tabel);
+                    System.out.println("List Kolom : "+kolom);
+                    System.out.println("");
+                    System.out.println("QEP #1");
+                    System.out.println("PROJECTION "+kolom+" -- on the fly");
+                    System.out.println("SELECTION "+ambilWhere(array)+" -- A1 non key");
+                    System.out.println(tabel);
+                    int cost1 = hitungCost("A1n",N,tabel,hasiltxt);
+                    System.out.println("Cost : "+cost1);
+                }
+            }
+            else {
+                String kolom = kolom(array,hasiltxt);
+                System.out.println("Tabel (1) : "+tabel);
+                System.out.println("List Kolom : "+kolom);
+            }
+//            hasiltxt2 = ubahHasilTxt(hasiltxt);
+//            int indexTabel = indexTabel(tabel, hasiltxt2);
+        }
+//        System.out.println(Arrays.toString(hasiltxt2));
+//        for (int i = 0; i < array.length; i++){
+//            System.out.println(array[i]);
     }
     
     public static void menu5(){
@@ -241,7 +525,6 @@ public class TubesSBD {
     public static void main(String[] args) throws IOException {
         // TODO code application logic here
         String data ="";
-        
         try {
             BufferedReader readData = new BufferedReader(new FileReader("src\\tubessbd\\input.txt"));
             data = readData.readLine();
@@ -275,7 +558,7 @@ public class TubesSBD {
         } else if (pilihan == 3){
             menu3(hasiltxt);
         } else if (pilihan == 4){
-            menu4();
+            menu4(hasiltxt);
         } else if (pilihan == 5){
             menu5();
         }

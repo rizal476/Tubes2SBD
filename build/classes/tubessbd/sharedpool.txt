@@ -1,0 +1,6 @@
+QEP #2
+Projection id_supplier, nama_supplier -- on the fly
+SELECTION id_supplier = 190 ;  -- A2
+Supplier
+Cost (worse case): 3
+
