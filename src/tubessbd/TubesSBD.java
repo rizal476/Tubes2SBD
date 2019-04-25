@@ -224,7 +224,14 @@ public class TubesSBD {
     }
     
     public static void menu4(){
-        System.out.println("menu 4");
+        String query;
+        
+        Scanner input = new Scanner(System.in);
+        
+        System.out.println("Menu 4 : QEP dan Cost");
+        System.out.println("    Input Query : ");
+        System.out.print(">> ");
+        query = input.next();
     }
     
     public static void menu5(){
