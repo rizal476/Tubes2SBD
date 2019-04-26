@@ -246,40 +246,28 @@ public class TubesSBD {
         return N;
     }
     
-    public static String kolom(String[] array, String[] array2){
-        int indexFrom = indexFrom(array);
+    public static String kolom(String[] array, String[] hasiltxt, String tabel){
+        int i = 0;
         String kolom = "";
-        int i = 1;
-        while((i < indexFrom)){
-            kolom = kolom + array[i] + ", ";
+        while ((i < hasiltxt.length) && (!hasiltxt[i].contains(tabel))){
             i++;
         }
-//        String[] temp = null;
-        
-//        temp = myList.toArray(temp);
-//        for (int z = 0; z < temp.length; z++){
-//            System.out.println(temp[z]);
-//        }
-//        for (int j = 0; j < temp.length; j++){
-//            kolom = kolom + temp[j] + ", ";
-//        }
-        kolom = kolom.substring(0,kolom.length()-1);
-        kolom = kolom.substring(0,kolom.length()-1);
-        String kkolom = kolom.replace(", ", ";");
-        i = 0;
-
-        while((i < array2.length) && (!array2[i].contains(kkolom))){
-            i++;
-        }
-        
-        if (i <= 3){
-            if(array2[i].contains(kkolom)){
-                kolom = kolom;
+        if (hasiltxt[i].contains(tabel)){
+            int j = 1;
+            int indexFrom = indexFrom(array);
+            while (j < indexFrom){
+                if (hasiltxt[i].contains(array[j])){
+                    kolom = kolom + array[j] + ", ";
+                }
+                j++;
             }
         }
         else {
-            kolom = "eror";
+            System.out.println("Tidak ada tabel "+tabel);
         }
+        kolom = kolom.substring(0,kolom.length()-1);
+        kolom = kolom.substring(0,kolom.length()-1);
+
         return kolom;
     }
     
@@ -302,6 +290,19 @@ public class TubesSBD {
             i++;
         }
         if (array[i].equalsIgnoreCase("from")){
+            return i;
+        }
+        else {
+            return 999;
+        }
+    }
+    
+    public static int indexJoin(String[] array){
+        int i = 0;
+        while((i < array.length) && (!array[i].equalsIgnoreCase("join"))){
+            i++;
+        }
+        if (array[i].equalsIgnoreCase("join")){
             return i;
         }
         else {
@@ -349,6 +350,18 @@ public class TubesSBD {
         }
         else if (type == "A1n"){
             temp = n;
+        }
+        else if (type == "A1J"){
+            String[] array2 = tabel.split(" ");
+            int n1 = ambilN(array,array2[0]);
+            int n2 = ambilN(array,array2[1]);
+            temp = n1 * n2 + n1;
+        }
+        else if (type == "A2J"){
+            String[] array2 = tabel.split(" ");
+            int n1 = ambilN(array,array2[0]);
+            int n2 = ambilN(array,array2[1]);
+            temp = n2 * n1 + n2;
         }
         return temp;
     }
@@ -420,7 +433,9 @@ public class TubesSBD {
         String query;
         String[] hasiltxt2 = null;
         int indexTabel = 0;
-        
+        int indexTabel2 = 0;
+        int indexJoin = 0;
+                
         Scanner input = new Scanner(System.in);
         
         System.out.println("Menu 4 : QEP dan Cost");
@@ -433,9 +448,11 @@ public class TubesSBD {
         if (cek) {
             String tabel = cariTabel(array);
             indexTabel = indexTabel(tabel, array);
+            indexJoin = indexTabel+1;
+            indexTabel2 = indexJoin+1;
             int N = ambilN(hasiltxt, tabel);
             if (array[indexTabel+1].equalsIgnoreCase("where")){
-                String kolom = kolom(array,hasiltxt);
+                String kolom = kolom(array,hasiltxt,tabel);
                 boolean cekPK = cekPK(kolom,indexTabel);
                 if (cekPK){
                     System.out.println("Tabel (1) : "+tabel);
@@ -503,10 +520,96 @@ public class TubesSBD {
                     System.out.println(tabel);
                     int cost1 = hitungCost("A1n",N,tabel,hasiltxt);
                     System.out.println("Cost : "+cost1);
+                    
+                    try{
+                        BufferedWriter br = new BufferedWriter(new FileWriter("F:\\SBD\\TubesSBD\\src\\tubessbd//sharedpool.txt",true)); 
+                        br.write("QEP #1");   br.newLine();
+                        br.write("Projection "+kolom+" -- on the fly");    br.newLine();
+                        br.write("SELECTION "+ambilWhere(array)+" -- A1 non key");    br.newLine();
+                        br.write(tabel);   br.newLine();
+                        br.write("Cost (worse case): "+cost1);   br.newLine();
+                        br.write("");   br.newLine();
+                        br.close();
+                    }
+                    catch(Exception e){
+                        System.out.println("LOAD FILE ERROR ATAU GAK NEMU ("+e+") "); //ketika gagal load data
+                    }
+                }
+            }
+            else if (array[indexTabel+1].equalsIgnoreCase("join")) {
+                String kolom = kolom(array,hasiltxt,tabel);
+                String kolomm = kolom(array,hasiltxt,array[indexJoin+1]);
+                boolean cekPK = cekPK(kolom,indexTabel);
+                if (cekPK){
+                    String tabelTemp = tabel + " " + array[indexJoin+1];
+                    System.out.println("Tabel (1) : "+tabel);
+                    System.out.println("List Kolom : "+kolom);
+                    System.out.println("Tabel (2) : "+array[indexJoin+1]);
+                    System.out.println("List Kolom : "+kolomm);
+                    System.out.println("");
+                    System.out.println("QEP #1");
+                    System.out.println("PROJECTION "+kolom+" -- on the fly");
+                    System.out.println("Join "+tabel+"."+array[array.length-2]+" = "+array[indexJoin+1]+"."+array[array.length-2]+" -- BLNJ");
+                    System.out.println(tabel+"  "+array[indexJoin+1]);
+                    N = 0;
+                    int cost1 = hitungCost("A1J",N,tabelTemp,hasiltxt);
+                    System.out.println("Cost (worse case) : "+cost1);
+                    System.out.println("");
+                    System.out.println("QEP #2");
+                    System.out.println("PROJECTION "+kolom+" -- on the fly");
+                    System.out.println("Join "+tabel+"."+array[array.length-2]+" = "+array[indexJoin+1]+"."+array[array.length-2]+" -- BLNJ");
+                    System.out.println(array[indexJoin+1]+" "+tabel);
+                    int cost2 = hitungCost("A2J",N,tabelTemp,hasiltxt);
+                    System.out.println("Cost (worse case) : "+cost2);
+                    
+                    if (cost1 > cost2){
+                        System.out.println("QEP optimal : QEP#2");
+                        try{
+                            BufferedWriter br = new BufferedWriter(new FileWriter("F:\\SBD\\TubesSBD\\src\\tubessbd//sharedpool.txt",true));
+                            br.write("QEP #2");    
+                            br.newLine();
+                            br.write("Projection "+kolomm+" -- on the fly");    
+                            br.newLine();
+                            br.write("Join "+tabel+"."+array[array.length-2]+" = "+array[indexJoin+1]+"."+array[array.length-2]+" -- BLNJ");   
+                            br.newLine();
+                            br.write(array[indexJoin+1]+" "+tabel);   
+                            br.newLine();
+                            br.write("Cost (worse case): "+cost2);    
+                            br.newLine();
+                            br.write("");    
+                            br.newLine();
+                            br.close();
+                        }
+                        catch(Exception e){
+                            System.out.println("LOAD FILE ERROR ATAU GAK NEMU ("+e+") "); //ketika gagal load data
+                        }                     
+                    }
+                    else{
+                        System.out.println("QEP optimal : QEP#1");
+                        try{
+                            BufferedWriter br = new BufferedWriter(new FileWriter("F:\\SBD\\TubesSBD\\src\\tubessbd//sharedpool.txt",true)); 
+                            br.write("QEP #1");   
+                            br.newLine();
+                            br.write("Projection "+kolom+" -- on the fly");    
+                            br.newLine();
+                            br.write("Join "+tabel+"."+array[array.length-2]+" = "+array[indexJoin+1]+"."+array[array.length-2]+" -- BLNJ");    
+                            br.newLine();
+                            br.write(tabel+"  "+array[indexJoin+1]);   
+                            br.newLine();
+                            br.write("Cost (worse case): "+cost1);   
+                            br.newLine();
+                            br.write("");   
+                            br.newLine();
+                            br.close();
+                        }
+                        catch(Exception e){
+                            System.out.println("LOAD FILE ERROR ATAU GAK NEMU ("+e+") "); //ketika gagal load data
+                        }       
+                    }
                 }
             }
             else {
-                String kolom = kolom(array,hasiltxt);
+                String kolom = kolom(array,hasiltxt,tabel);
                 System.out.println("Tabel (1) : "+tabel);
                 System.out.println("List Kolom : "+kolom);
             }
@@ -519,7 +622,19 @@ public class TubesSBD {
     }
     
     public static void menu5(){
-        System.out.println("menu 5");
+        System.out.println("Menu 5 : Shared Pool");
+        String datasss="";
+        try {
+            BufferedReader files = new BufferedReader(new FileReader("F:\\SBD\\TubesSBD\\src\\tubessbd//sharedpool.txt")); //baca data text
+            datasss=files.readLine(); //masukan isi data ke variable baru
+            while((datasss = files.readLine()) != null) {
+                System.out.println(datasss);
+            }   
+        } 
+        catch (Exception e) {
+            System.out.println("LOAD FILE ERROR ATAU GAK NEMU ("+e+") "); //ketika gagal load data
+                   
+        }
     }
     
     public static void main(String[] args) throws IOException {

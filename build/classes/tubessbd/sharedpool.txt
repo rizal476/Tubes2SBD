@@ -4,3 +4,21 @@ SELECTION id_supplier = 190 ;  -- A2
 Supplier
 Cost (worse case): 3
 
+QEP #2
+Projection id_supplier -- on the fly
+SELECTION id_supplier = 190 ;  -- A2
+Supplier
+Cost (worse case): 3
+
+QEP #2
+Projection id_supplier;nama_supplier -- on the fly
+SELECTION id_supplier = 200 ;  -- A2
+Supplier
+Cost (worse case): 3
+
+QEP #2
+Projection id_supplier -- on the fly
+Join Supplier.id_supplier = Mensupply.id_supplier -- BLNJ
+Mensupply Supplier
+Cost (worse case): 100001000
+
