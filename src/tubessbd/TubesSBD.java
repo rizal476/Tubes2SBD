@@ -270,7 +270,7 @@ public class TubesSBD {
 
         return kolom;
     }
-    
+  
     public static int indexTabel(String tabel, String[] array){
         int i = 0;
         while ((i < array.length) && (!array[i].equalsIgnoreCase(tabel))){
